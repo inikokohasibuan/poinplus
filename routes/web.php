@@ -14,14 +14,16 @@ use App\Http\Controllers\RecBrgMasukController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\StokController;
 use App\Http\Controllers\PemindahanStokController;
+use App\Http\Controllers\DashboardController;
 
 Route::get('/', function () {
     return view('welcome');
-})->name('beranda');
+})->name('welcome');
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -29,26 +31,29 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-Route::name('master.')->prefix('master')->group(function () {
-    Route::resource('kategori', KategoriController::class);
-    Route::resource('produk', ProdukController::class);
-    Route::resource('subproduk', SubProdukController::class);
-    Route::get('/subproduk/copy/{id}', [SubProdukController::class, 'copy'])->name('subproduk.copy');
-    Route::resource('lokasi', LokasiController::class);
-    Route::resource('pembeli', PembeliController::class);
-});
-Route::resource('rec_brg_masuk', RecBrgMasukController::class);
+// Route::middleware(['auth', \App\Http\Middleware\CheckLevel::class . ':admin,owner'])->group(function () {
+    Route::name('master.')->prefix('master')->group(function () {
+        Route::resource('kategori', KategoriController::class);
+        Route::resource('produk', ProdukController::class);
+        Route::resource('subproduk', SubProdukController::class);
+        Route::get('/subproduk/copy/{id}', [SubProdukController::class, 'copy'])->name('subproduk.copy');
+        Route::resource('lokasi', LokasiController::class);
+        Route::resource('pembeli', PembeliController::class);
+    });
+// });
 
-Route::resource('penjualan', PenjualanController::class);
+// Route::middleware(['auth', \App\Http\Middleware\CheckLevel::class . ':owner'])->group(function () {
+    Route::resource('rec_brg_masuk', RecBrgMasukController::class);
+    Route::resource('penjualan', PenjualanController::class);
+    Route::get('/stok', [StokController::class, 'index'])->name('stok.index');
+    Route::resource('pemindahan_stok', PemindahanStokController::class);
+// });
 
-Route::get('/stok', [StokController::class, 'index'])->name('stok.index');
-
-Route::resource('pemindahan_stok', PemindahanStokController::class);
-
-Route::resource('detailbrgmasuk', DetailBrgMasukController::class);
-
-Route::resource('detailpenjualan', DetailPenjualanController::class);
+// Route::middleware(['auth', \App\Http\Middleware\CheckLevel::class . ':penjaga_toko'])->group(function () {
+    Route::resource('detailbrgmasuk', DetailBrgMasukController::class);
+    Route::resource('detailpenjualan', DetailPenjualanController::class);
+// });
 
 Route::resource('user', UserController::class);
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
