@@ -12,7 +12,7 @@
             @method('PUT')
             <div class="form-group">
                 <label for="tgl_penjualan">Tanggal Penjualan</label>
-                <input type="date" name="tgl_penjualan" id="tgl_penjualan" class="form-control" value="{{date('Y-m-d', strtotime($penjualan->tgl_penjualan))}}" required>
+                <input type="date" name="tgl_penjualan" id="tgl_penjualan" class="form-control" value="{{ date('Y-m-d', strtotime($penjualan->tgl_penjualan)) }}" required>
             </div>
             <div class="form-group">
                 <label for="id_lokasi">Lokasi</label>
@@ -38,28 +38,32 @@
                     <thead>
                         <tr>
                             <th>Sub Produk</th>
+                            <th>Jumlah</th>
                             <th>Harga Pembelian</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($penjualan->detailPenjualan as $index => $detail)
-                        <tr>
-                            <td>
-                                <select name="details[{{ $index }}][id_sub_produk]" class="form-control" required>
-                                    <option value="">Pilih Sub Produk</option>
-                                    @foreach($subProduk as $item)
-                                        <option value="{{ $item->id_sub_produk }}" {{ $item->id_sub_produk == $detail->id_sub_produk ? 'selected' : '' }}>{{ $item->produk->nama_produk }} {{ $item->produk->kategori->nama_kategori }} {{ $item->warna_produk }} {{ $item->size_produk }}</option>
-                                    @endforeach
-                                </select>
-                            </td>
-                            <td>
-                                <input type="number" name="details[{{ $index }}][harga_penjualan]" class="form-control" value="{{ $detail->harga_penjualan }}" required>
-                            </td>
-                            <td>
-                                <button type="button" class="btn btn-danger btn-sm remove-detail">Hapus</button>
-                            </td>
-                        </tr>
+                            <tr>
+                                <td>
+                                    <select name="details[{{ $index }}][id_sub_produk]" class="form-control" required>
+                                        <option value="">Pilih Sub Produk</option>
+                                        @foreach($subProduk as $item)
+                                            <option value="{{ $item->id_sub_produk }}" {{ $item->id_sub_produk == $detail->id_sub_produk ? 'selected' : '' }}>{{ $item->produk->nama_produk }} {{ $item->produk->kategori->nama_kategori }} {{ $item->warna_produk }} {{ $item->size_produk }}</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="number" name="details[{{ $index }}][jumlah_brg]" class="form-control" value="{{ $detail->jumlah_brg }}" required>
+                                </td>
+                                <td>
+                                    <input type="number" name="details[{{ $index }}][harga_penjualan]" class="form-control" value="{{ $detail->harga_penjualan }}" required>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-danger btn-sm remove-detail">Hapus</button>
+                                </td>
+                            </tr>
                         @endforeach
                     </tbody>
                 </table>

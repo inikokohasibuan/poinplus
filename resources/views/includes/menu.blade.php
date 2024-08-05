@@ -56,7 +56,7 @@
           </ul>
         </li>
         @endif
-        @if(Auth::user()->level == 'owner')
+        @if(Auth::user()->level == 'penjaga_toko' || Auth::user()->level == 'owner' || Auth::user()->level == 'admin')
         <li class="nav-item">
           <a href="{{ route('rec_brg_masuk.index') }}" class="nav-link @if(Route::current()->getName() == 'rec_brg_masuk.index') active @endif">
             <i class="fa-solid fa-boxes nav-icon"></i>
@@ -75,9 +75,14 @@
             <p>Stok</p>
           </a>
         </li>
-        @endif
-        @if(Auth::user()->level == 'penjaga_toko')
         <li class="nav-item">
+          <a href="{{ route('pemindahan_stok.index') }}" class="nav-link @if(Route::current()->getName() == 'stok.index') active @endif">
+            <i class="fa-solid fa-truck-moving nav-icon"></i>
+            <p>Pemindahan Stok</p>
+          </a>
+        </li>
+
+        <!-- <li class="nav-item">
           <a href="{{ route('detailbrgmasuk.index') }}" class="nav-link @if(Route::current()->getName() == 'detailbrgmasuk.index') active @endif">
             <i class="fa-solid fa-box-open nav-icon"></i>
             <p>Detail Barang Masuk</p>
@@ -88,9 +93,31 @@
             <i class="fa-solid fa-receipt nav-icon"></i>
             <p>Detail Penjualan</p>
           </a>
-        </li>
+        </li> -->
         @endif
         @if(Auth::user()->level == 'admin' || Auth::user()->level == 'owner')
+        <li class="nav-item @if(str_contains(Route::current()->getPrefix(), 'laporan')) menu-open @endif">
+          <a href="#" class="nav-link @if(str_contains(Route::current()->getPrefix(), 'laporan')) active @endif">
+            <i class="nav-icon fa-solid fa-cogs"></i>
+            <p>Laporan<i class="right fas fa-angle-left"></i></p>
+          </a>
+          <ul class="nav nav-treeview">
+            <li class="nav-item">
+              <a href="{{ route('laporan.penjualan') }}" class="pl-4 nav-link @if(Route::current()->getName() == 'laporan.penjualan') active @endif">
+                <i class="fa-solid fa-tag nav-icon"></i>
+                <p>Penjualan</p>
+              </a>
+            </li>
+          </ul>
+          <ul class="nav nav-treeview">
+            <li class="nav-item">
+              <a href="{{ route('laporan.stok') }}" class="pl-4 nav-link @if(Route::current()->getName() == 'laporan.stok') active @endif">
+                <i class="fa-solid fa-tag nav-icon"></i>
+                <p>Stok</p>
+              </a>
+            </li>
+          </ul>
+        </li>
         <li class="nav-item">
           <a href="{{ route('user.index') }}" class="nav-link @if(Route::current()->getName() == 'user.index') active @endif">
             <i class="fa-solid fa-users nav-icon"></i>

@@ -16,6 +16,7 @@ class DetailPenjualan extends Model
         'id_penjualan',
         'id_sub_produk',
         'harga_penjualan',
+        'jumlah_brg', // Tambahkan ini
     ];
 
     public function penjualan()

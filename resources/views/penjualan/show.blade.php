@@ -7,8 +7,13 @@
 @section('content')
 <div class="card">
     <div class="card-body">
+        <!-- Tanggal Penjualan -->
         <p><strong>Tanggal Penjualan:</strong> {{ Carbon\Carbon::parse($penjualan->tgl_penjualan)->format('d F Y') }}</p>
+
+        <!-- Lokasi -->
         <p><strong>Lokasi:</strong> {{ $penjualan->lokasi->nama_lokasi }}</p>
+
+        <!-- Pembeli -->
         <p><strong>Pembeli:</strong> {{ $penjualan->pembeli ? $penjualan->pembeli->nama_pembeli : 'N/A' }}</p>
         
         <h4>Detail Barang</h4>
@@ -16,6 +21,7 @@
             <thead>
                 <tr>
                     <th>Sub Produk</th>
+                    <th>Jumlah</th>
                     <th>Harga Pembelian</th>
                 </tr>
             </thead>
@@ -23,6 +29,7 @@
                 @foreach($penjualan->detailPenjualan as $detail)
                 <tr>
                     <td>{{ $detail->subProduk->produk->nama_produk }} {{ $detail->subProduk->produk->kategori->nama_kategori }} {{ $detail->subProduk->warna_produk }} {{ $detail->subProduk->size_produk }}</td>
+                    <td>{{ $detail->jumlah_brg }}</td>
                     <td>Rp{{ number_format($detail->harga_penjualan, 2) }}</td>
                 </tr>
                 @endforeach

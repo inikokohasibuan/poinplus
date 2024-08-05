@@ -56,4 +56,10 @@ Route::middleware('auth')->group(function () {
 
 Route::resource('user', UserController::class);
 
+// Routes untuk laporan
+Route::prefix('laporan')->name('laporan.')->group(function () {
+    Route::get('penjualan', [App\Http\Controllers\LaporanController::class, 'penjualan'])->name('penjualan');
+    Route::get('stok', [App\Http\Controllers\LaporanController::class, 'stok'])->name('stok');
+});
+
 require __DIR__ . '/auth.php';

@@ -35,7 +35,7 @@ class UserController extends Controller
         'name' => 'required|string|max:255',
         'email' => 'required|string|email|max:255|unique:users',
         'password' => 'required|string|min:8|confirmed',
-        'level' => 'required|in:admin,owner,storekeeper',
+        'level' => 'required|in:admin,owner,penjaga_toko',
     ]);
 
     if ($validator->fails()) {
@@ -77,7 +77,7 @@ class UserController extends Controller
         'name' => 'required|string|max:255',
         'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
         'password' => 'nullable|string|min:8|confirmed',
-        'level' => 'required|in:admin,owner,storekeeper',
+        'level' => 'required|in:admin,owner,penjaga_toko',
     ]);
 
     if ($validator->fails()) {

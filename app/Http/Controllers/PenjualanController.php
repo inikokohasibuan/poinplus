@@ -70,49 +70,86 @@ class PenjualanController extends Controller
     }
 
     public function update(Request $request, Penjualan $penjualan)
-    {
-        $penjualan->update($request->all());
-        $details = $request->details;
+{
+    // Update informasi penjualan
+    $penjualan->update([
+        'tgl_penjualan' => $request->tgl_penjualan,
+        'id_lokasi' => $request->id_lokasi,
+        'id_pembeli' => $request->id_pembeli,
+    ]);
 
-        foreach ($details as $detail) {
-            $existingDetail = DetailPenjualan::find($detail['id_detail_penjualan']);
+    // Ambil detail penjualan dari request
+    $details = $request->details;
+
+    // Hapus detail penjualan yang ada
+    $penjualan->detailPenjualan()->delete();
+
+    foreach ($details as $detail) {
+        // Pastikan key id_detail_penjualan ada
+        $idDetailPenjualan = isset($detail['id_detail_penjualan']) ? $detail['id_detail_penjualan'] : null;
+
+        if ($idDetailPenjualan) {
+            // Cek jika detail penjualan sudah ada
+            $existingDetail = DetailPenjualan::find($idDetailPenjualan);
+            
             if ($existingDetail) {
-                // Update stok lokasi
-                $stokLokasi = StokLokasi::where('id_sub_produk', $existingDetail->id_sub_produk)
+                // Update stok lokasi untuk detail yang diupdate
+                $stokLokasiOld = StokLokasi::where('id_sub_produk', $existingDetail->id_sub_produk)
                     ->where('id_lokasi', $penjualan->id_lokasi)
                     ->first();
 
-                if ($stokLokasi) {
-                    $stokLokasi->jumlah_stok += 1; // Tambah stok lama
-                    $stokLokasi->jumlah_stok -= 1; // Kurangi stok baru
-                    $stokLokasi->save();
+                if ($stokLokasiOld) {
+                    // Tambah stok lama untuk produk lama
+                    $stokLokasiOld->jumlah_stok += $existingDetail->jumlah_brg;
+                    $stokLokasiOld->save();
                 }
 
-                // Update detail
-                $existingDetail->update($detail);
-            } else {
-                // Tambah detail baru
-                DetailPenjualan::create([
-                    'id_penjualan' => $penjualan->id_penjualan,
+                // Kurangi stok untuk produk baru
+                $stokLokasiNew = StokLokasi::where('id_sub_produk', $detail['id_sub_produk'])
+                    ->where('id_lokasi', $penjualan->id_lokasi)
+                    ->first();
+
+                if ($stokLokasiNew) {
+                    $stokLokasiNew->jumlah_stok -= $detail['jumlah_brg'];
+                    $stokLokasiNew->save();
+                } else {
+                    // Handle jika stok lokasi tidak ditemukan
+                    // Misalnya, log atau tampilkan pesan kesalahan
+                }
+
+                // Update detail penjualan
+                $existingDetail->update([
                     'id_sub_produk' => $detail['id_sub_produk'],
+                    'jumlah_brg' => $detail['jumlah_brg'],
                     'harga_penjualan' => $detail['harga_penjualan'],
                 ]);
+            }
+        } else {
+            // Tambah detail baru
+            DetailPenjualan::create([
+                'id_penjualan' => $penjualan->id_penjualan,
+                'id_sub_produk' => $detail['id_sub_produk'],
+                'jumlah_brg' => $detail['jumlah_brg'],
+                'harga_penjualan' => $detail['harga_penjualan'],
+            ]);
 
-                // Kurangi stok baru
-                $stokLokasi = StokLokasi::where('id_sub_produk', $detail['id_sub_produk'])
-                    ->where('id_lokasi', $penjualan->id_lokasi)
-                    ->first();
+            // Kurangi stok baru
+            $stokLokasi = StokLokasi::where('id_sub_produk', $detail['id_sub_produk'])
+                ->where('id_lokasi', $penjualan->id_lokasi)
+                ->first();
 
-                if ($stokLokasi) {
-                    $stokLokasi->jumlah_stok -= 1;
-                } else {
-                    // Handle case if stok lokasi not found, maybe throw an error or ignore
-                }
+            if ($stokLokasi) {
+                $stokLokasi->jumlah_stok -= $detail['jumlah_brg'];
+                $stokLokasi->save();
+            } else {
+                // Handle jika stok lokasi tidak ditemukan
+                // Misalnya, log atau tampilkan pesan kesalahan
             }
         }
-
-        return redirect()->route('penjualan.index')->with('success', 'Penjualan berhasil diperbarui.');
     }
+
+    return redirect()->route('penjualan.index')->with('success', 'Penjualan berhasil diperbarui.');
+}
 
 
     public function destroy(Penjualan $penjualan)
