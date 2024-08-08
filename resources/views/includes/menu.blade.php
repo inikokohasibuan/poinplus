@@ -76,7 +76,7 @@
           </a>
         </li>
         <li class="nav-item">
-          <a href="{{ route('pemindahan_stok.index') }}" class="nav-link @if(Route::current()->getName() == 'stok.index') active @endif">
+          <a href="{{ route('pemindahan_stok.index') }}" class="nav-link @if(Route::current()->getName() == 'pemindahan_stok.index') active @endif">
             <i class="fa-solid fa-truck-moving nav-icon"></i>
             <p>Pemindahan Stok</p>
           </a>

@@ -62,4 +62,7 @@ Route::prefix('laporan')->name('laporan.')->group(function () {
     Route::get('stok', [App\Http\Controllers\LaporanController::class, 'stok'])->name('stok');
 });
 
+// routes/web.php
+Route::get('/sub-produk-by-lokasi/{id_lokasi}', [PenjualanController::class, 'getSubProdukByLokasi']);
+
 require __DIR__ . '/auth.php';
