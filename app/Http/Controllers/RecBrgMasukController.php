@@ -8,6 +8,7 @@ use App\Models\Lokasi;
 use App\Models\SubProduk;
 use App\Models\StokLokasi;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class RecBrgMasukController extends Controller
 {
@@ -26,33 +27,41 @@ class RecBrgMasukController extends Controller
 
     public function store(Request $request)
     {
-        $recBrgMasuk = RecBrgMasuk::create($request->all());
-        $details = $request->details;
+        DB::beginTransaction();
+        try {
+            $recBrgMasuk = RecBrgMasuk::create($request->all());
+            $details = $request->details;
 
-        foreach ($details as $detail) {
-            DetailBrgMasuk::create([
-                'id_rec_brg_masuk' => $recBrgMasuk->id_rec_brg_masuk,
-                'id_sub_produk' => $detail['id_sub_produk'],
-                'jumlah_brg_masuk' => $detail['jumlah_brg_masuk'],
-            ]);
-
-            // Update stok lokasi
-            $stokLokasi = StokLokasi::where('id_sub_produk', $detail['id_sub_produk'])
-                ->where('id_lokasi', $recBrgMasuk->id_lokasi)
-                ->first();
-
-            if ($stokLokasi) {
-                $stokLokasi->jumlah_stok += $detail['jumlah_brg_masuk'];
-            } else {
-                StokLokasi::create([
+            foreach ($details as $detail) {
+                DetailBrgMasuk::create([
+                    'id_rec_brg_masuk' => $recBrgMasuk->id_rec_brg_masuk,
                     'id_sub_produk' => $detail['id_sub_produk'],
-                    'id_lokasi' => $recBrgMasuk->id_lokasi,
-                    'jumlah_stok' => $detail['jumlah_brg_masuk'],
+                    'jumlah_brg_masuk' => $detail['jumlah_brg_masuk'],
                 ]);
-            }
-        }
 
-        return redirect()->route('rec_brg_masuk.index')->with('success', 'Record Barang Masuk berhasil ditambahkan.');
+                // Update stok lokasi
+                $stokLokasi = StokLokasi::where('id_sub_produk', $detail['id_sub_produk'])
+                    ->where('id_lokasi', $recBrgMasuk->id_lokasi)
+                    ->first();
+
+                if ($stokLokasi) {
+                    $stokLokasi->jumlah_stok += $detail['jumlah_brg_masuk'];
+                    $stokLokasi->save();
+                } else {
+                    StokLokasi::create([
+                        'id_sub_produk' => $detail['id_sub_produk'],
+                        'id_lokasi' => $recBrgMasuk->id_lokasi,
+                        'jumlah_stok' => $detail['jumlah_brg_masuk'],
+                    ]);
+                }
+            }
+
+            DB::commit();
+            return redirect()->route('rec_brg_masuk.index')->with('success', 'Record Barang Masuk berhasil ditambahkan.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()]);
+        }
     }
 
     public function show(RecBrgMasuk $recBrgMasuk)
@@ -71,53 +80,83 @@ class RecBrgMasukController extends Controller
 
     public function update(Request $request, RecBrgMasuk $recBrgMasuk)
     {
-        $recBrgMasuk->update($request->all());
-        $details = $request->details;
 
-        foreach ($details as $detail) {
-            $existingDetail = DetailBrgMasuk::find($detail['id_detail_brg_masuk']);
-            if ($existingDetail) {
-                // Update stok lokasi
-                $stokLokasi = StokLokasi::where('id_sub_produk', $existingDetail->id_sub_produk)
-                    ->where('id_lokasi', $recBrgMasuk->id_lokasi)
-                    ->first();
+        DB::beginTransaction();
+        try {
+            // Update RecBrgMasuk
+            $recBrgMasuk->update($request->all());
+            $details = $request->details;
 
-                if ($stokLokasi) {
-                    $stokLokasi->jumlah_stok -= $existingDetail->jumlah_brg_masuk; // Kurangi stok lama
-                    $stokLokasi->jumlah_stok += $detail['jumlah_brg_masuk']; // Tambah stok baru
-                    $stokLokasi->save();
-                }
+            $oldDetail = DetailBrgMasuk::where('id_rec_brg_masuk', $recBrgMasuk['id_rec_brg_masuk'])
+                ->pluck('id_detail_brg_masuk')
+                ->toArray();
 
-                // Update detail
-                $existingDetail->update($detail);
-            } else {
-                // Tambah detail baru
-                DetailBrgMasuk::create([
-                    'id_rec_brg_masuk' => $recBrgMasuk->id_rec_brg_masuk,
-                    'id_sub_produk' => $detail['id_sub_produk'],
-                    'jumlah_brg_masuk' => $detail['jumlah_brg_masuk'],
-                ]);
+            foreach ($details as $detail) {
+                $existingDetail = DetailBrgMasuk::where('id_rec_brg_masuk', $recBrgMasuk['id_rec_brg_masuk'])->where('id_sub_produk', $detail['id_sub_produk'])->first();
+                if ($existingDetail) {
+                    $key = array_search($existingDetail['id_detail_brg_masuk'], $oldDetail);
+                    if ($key !== false) {
+                        unset($oldDetail[$key]);
+                    }
 
-                // Tambah stok baru
-                $stokLokasi = StokLokasi::where('id_sub_produk', $detail['id_sub_produk'])
-                    ->where('id_lokasi', $recBrgMasuk->id_lokasi)
-                    ->first();
+                    // Re-index array to avoid gaps in the keys
+                    $oldDetail = array_values($oldDetail);
 
-                if ($stokLokasi) {
-                    $stokLokasi->jumlah_stok += $detail['jumlah_brg_masuk'];
+                    // Update stok lokasi
+                    $stokLokasi = StokLokasi::where('id_sub_produk', $existingDetail->id_sub_produk)
+                        ->where('id_lokasi', $recBrgMasuk->id_lokasi)
+                        ->first();
+                    if ($stokLokasi) {
+                        $stokLokasi->jumlah_stok -= $existingDetail->jumlah_brg_masuk; // Kurangi stok lama
+                        $stokLokasi->jumlah_stok += $detail['jumlah_brg_masuk']; // Tambah stok baru
+                        $stokLokasi->save();
+                    }
+
+                    // Update detail
+                    $existingDetail->update($detail);
                 } else {
-                    StokLokasi::create([
+                    // Tambah detail barus
+                    DetailBrgMasuk::create([
+                        'id_rec_brg_masuk' => $recBrgMasuk['id_rec_brg_masuk'],
                         'id_sub_produk' => $detail['id_sub_produk'],
-                        'id_lokasi' => $recBrgMasuk->id_lokasi,
-                        'jumlah_stok' => $detail['jumlah_brg_masuk'],
+                        'jumlah_brg_masuk' => $detail['jumlah_brg_masuk'],
                     ]);
+
+                    // Tambah stok baru
+                    $stokLokasi = StokLokasi::where('id_sub_produk', $detail['id_sub_produk'])
+                        ->where('id_lokasi', $recBrgMasuk->id_lokasi)
+                        ->first();
+
+                    if ($stokLokasi) {
+                        $stokLokasi->jumlah_stok += $detail['jumlah_brg_masuk'];
+                        $stokLokasi->save();
+                    } else {
+                        StokLokasi::create([
+                            'id_sub_produk' => $detail['id_sub_produk'],
+                            'id_lokasi' => $recBrgMasuk->id_lokasi,
+                            'jumlah_stok' => $detail['jumlah_brg_masuk'],
+                        ]);
+                    }
                 }
             }
+            
+            foreach ($oldDetail as $key => $value) {
+                $detailForDelete = DetailBrgMasuk::where('id_detail_brg_masuk', $value)->first();
+                $stokLokasi = StokLokasi::where('id_sub_produk', $detailForDelete['id_sub_produk'])
+                        ->where('id_lokasi', $recBrgMasuk->id_lokasi)
+                        ->first();
+                        $stokLokasi->jumlah_stok -= $detail['jumlah_brg_masuk'];
+                        $stokLokasi->save();
+                $detailForDelete->delete();
+            }
+
+            DB::commit();
+            return redirect()->route('rec_brg_masuk.index')->with('success', 'Record Barang Masuk berhasil diperbarui.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()]);
         }
-
-        return redirect()->route('rec_brg_masuk.index')->with('success', 'Record Barang Masuk berhasil diperbarui.');
     }
-
 
     public function destroy(RecBrgMasuk $recBrgMasuk)
     {
