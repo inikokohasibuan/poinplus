@@ -95,96 +95,103 @@ class PenjualanController extends Controller
     }
 
     public function update(Request $request, $id)
-{
-    $penjualan = Penjualan::findOrFail($id);
-    $lokasiLama = $penjualan->id_lokasi; // Lokasi sebelum perubahan
-    $lokasiBaru = $request->id_lokasi;
+    {
+        $penjualan = Penjualan::findOrFail($id);
+        $lokasiLama = $penjualan->id_lokasi; // Lokasi sebelum perubahan
+        $lokasiBaru = $request->id_lokasi;
 
-    // Loop through each detail
-    foreach ($request->details as $detail) {
-        $idSubProduk = $detail['id_sub_produk'];
-        $jumlahBrg = $detail['jumlah_brg'];
-
-        $detailPenjualan = DetailPenjualan::where('id_penjualan', $id)
-                                          ->where('id_sub_produk', $idSubProduk)
-                                          ->first();
-
-        if ($detailPenjualan) {
-            // Update stock di lokasi lama
-            $stokLama = StokLokasi::where('id_lokasi', $lokasiLama)
-                            ->where('id_sub_produk', $idSubProduk)
-                            ->first();
-
-            $stokBaru = StokLokasi::where('id_lokasi', $lokasiBaru)
-                            ->where('id_sub_produk', $idSubProduk)
-                            ->first();
-
-            // Tambahkan kembali stok lama ke lokasi lama
-            $stokLama->jumlah_stok += $detailPenjualan->jumlah_brg;
-            $stokLama->save();
-
-            // Kurangi stok dari lokasi baru
-            $stokBaru->jumlah_stok -= $jumlahBrg;
-            $stokBaru->save();
-
-            // Update detail penjualan
-            $detailPenjualan->jumlah_brg = $jumlahBrg;
-            $detailPenjualan->harga_penjualan = $detail['harga_penjualan'];
-            $detailPenjualan->save();
-        } else {
-            // Tambahkan stok di lokasi baru
-            $stokBaru = StokLokasi::where('id_lokasi', $lokasiBaru)
-                            ->where('id_sub_produk', $idSubProduk)
-                            ->first();
-
-            if ($stokBaru) {
-                $stokBaru->jumlah_stok -= $jumlahBrg;
-                $stokBaru->save();
-            }
-
-            // Tambahkan detail penjualan baru
-            DetailPenjualan::create([
-                'id_penjualan' => $id,
-                'id_sub_produk' => $idSubProduk,
-                'jumlah_brg' => $jumlahBrg,
-                'harga_penjualan' => $detail['harga_penjualan'],
-            ]);
-        }
-    }
-
-    // Handle penghapusan detail penjualan yang tidak ada di request
-    $existingDetails = DetailPenjualan::where('id_penjualan', $id)->get();
-
-    foreach ($existingDetails as $existingDetail) {
-        $found = false;
-
+        // Loop through each detail
         foreach ($request->details as $detail) {
-            if ($existingDetail->id_sub_produk == $detail['id_sub_produk']) {
-                $found = true;
-                break;
+            $idSubProduk = $detail['id_sub_produk'];
+            $jumlahBrg = $detail['jumlah_brg'];
+
+            $detailPenjualan = DetailPenjualan::where('id_penjualan', $id)
+                ->where('id_sub_produk', $idSubProduk)
+                ->first();
+
+            if ($detailPenjualan) {
+                // Update stock di lokasi lama
+                $stokLama = StokLokasi::where('id_lokasi', $lokasiLama)
+                    ->where('id_sub_produk', $idSubProduk)
+                    ->first();
+                if ($lokasiLama == $lokasiBaru) {
+                    $stokLama->jumlah_stok += $detailPenjualan->jumlah_brg;
+                    $stokLama->jumlah_stok -= $jumlahBrg;
+                    $stokLama->save();
+                }else{
+                    $stokLama->jumlah_stok += $detailPenjualan->jumlah_brg;
+                    $stokLama->save();
+
+                    $stokBaru = StokLokasi::where('id_lokasi', $lokasiBaru)
+                    ->where('id_sub_produk', $idSubProduk)
+                    ->first();
+
+                    $stokBaru->jumlah_stok -= $jumlahBrg;
+                    $stokBaru->save();
+                }
+
+                // Tambahkan kembali stok lama ke lokasi lama
+
+                // Kurangi stok dari lokasi baru
+
+                // Update detail penjualan
+                $detailPenjualan->jumlah_brg = $jumlahBrg;
+                $detailPenjualan->harga_penjualan = $detail['harga_penjualan'];
+                $detailPenjualan->save();
+            } else {
+                // Tambahkan stok di lokasi baru
+                $stokBaru = StokLokasi::where('id_lokasi', $lokasiBaru)
+                    ->where('id_sub_produk', $idSubProduk)
+                    ->first();
+
+                if ($stokBaru) {
+                    $stokBaru->jumlah_stok -= $jumlahBrg;
+                    $stokBaru->save();
+                }
+
+                // Tambahkan detail penjualan baru
+                DetailPenjualan::create([
+                    'id_penjualan' => $id,
+                    'id_sub_produk' => $idSubProduk,
+                    'jumlah_brg' => $jumlahBrg,
+                    'harga_penjualan' => $detail['harga_penjualan'],
+                ]);
             }
         }
 
-        if (!$found) {
-            // Kembalikan stok ke lokasi baru sebelum menghapus
-            $stokBaru = StokLokasi::where('id_lokasi', $lokasiBaru)
-                            ->where('id_sub_produk', $existingDetail->id_sub_produk)
-                            ->first();
+        // Handle penghapusan detail penjualan yang tidak ada di request
+        $existingDetails = DetailPenjualan::where('id_penjualan', $id)->get();
 
-            if ($stokBaru) {
-                $stokBaru->jumlah_stok += $existingDetail->jumlah_brg;
-                $stokBaru->save();
+        foreach ($existingDetails as $existingDetail) {
+            $found = false;
+
+            foreach ($request->details as $detail) {
+                if ($existingDetail->id_sub_produk == $detail['id_sub_produk']) {
+                    $found = true;
+                    break;
+                }
             }
 
-            // Hapus detail penjualan
-            $existingDetail->delete();
+            if (!$found) {
+                // Kembalikan stok ke lokasi baru sebelum menghapus
+                $stokBaru = StokLokasi::where('id_lokasi', $lokasiBaru)
+                    ->where('id_sub_produk', $existingDetail->id_sub_produk)
+                    ->first();
+
+                if ($stokBaru) {
+                    $stokBaru->jumlah_stok += $existingDetail->jumlah_brg;
+                    $stokBaru->save();
+                }
+
+                // Hapus detail penjualan
+                $existingDetail->delete();
+            }
         }
+
+        $penjualan->update($request->all());
+
+        return redirect()->route('penjualan.index')->with('success', 'Penjualan berhasil diperbarui');
     }
-
-    $penjualan->update($request->all());
-
-    return redirect()->route('penjualan.index')->with('success', 'Penjualan berhasil diperbarui');
-}
 
 
     public function destroy(Penjualan $penjualan)
