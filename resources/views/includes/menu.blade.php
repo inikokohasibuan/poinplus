@@ -16,7 +16,7 @@
           </a>
         </li>
         @auth
-        @if(Auth::user()->level == 'admin' || Auth::user()->level == 'owner')
+        @if(Auth::user()->level == 'admin')
         <li class="nav-item @if(str_contains(Route::current()->getPrefix(), 'master')) menu-open @endif">
           <a href="#" class="nav-link @if(str_contains(Route::current()->getPrefix(), 'master')) active @endif">
             <i class="nav-icon fa-solid fa-cogs"></i>
@@ -56,7 +56,7 @@
           </ul>
         </li>
         @endif
-        @if(Auth::user()->level == 'penjaga_toko' || Auth::user()->level == 'owner' || Auth::user()->level == 'admin')
+        @if(Auth::user()->level == 'penjaga_toko' || Auth::user()->level == 'admin')
         <li class="nav-item">
           <a href="{{ route('rec_brg_masuk.index') }}" class="nav-link @if(Route::current()->getName() == 'rec_brg_masuk.index') active @endif">
             <i class="fa-solid fa-boxes nav-icon"></i>
@@ -118,6 +118,8 @@
             </li>
           </ul>
         </li>
+        @endif
+        @if(Auth::user()->level == 'admin')
         <li class="nav-item">
           <a href="{{ route('user.index') }}" class="nav-link @if(Route::current()->getName() == 'user.index') active @endif">
             <i class="fa-solid fa-users nav-icon"></i>
