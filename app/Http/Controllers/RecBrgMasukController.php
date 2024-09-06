@@ -14,13 +14,25 @@ class RecBrgMasukController extends Controller
 {
     public function index()
     {
-        $recBrgMasuk = RecBrgMasuk::with('lokasi')->get();
+        $user = auth()->user();
+
+        if ($user->level === 'penjaga_toko') {
+            $recBrgMasuk = RecBrgMasuk::where('id_lokasi', $user->id_lokasi)->with('lokasi')->get();
+        } else {
+            $recBrgMasuk = RecBrgMasuk::with('lokasi')->get();
+        }
+
         return view('rec_brg_masuk.index', compact('recBrgMasuk'));
     }
 
     public function create()
     {
-        $lokasi = Lokasi::all();
+        $user = auth()->user();
+        if ($user->level === 'penjaga_toko') {
+            $lokasi = Lokasi::where('id_lokasi', $user->id_lokasi)->get();
+        } else {
+            $lokasi = Lokasi::all();
+        }
         $subProduk = SubProduk::all();
         return view('rec_brg_masuk.create', compact('lokasi', 'subProduk'));
     }
@@ -72,7 +84,12 @@ class RecBrgMasukController extends Controller
 
     public function edit(RecBrgMasuk $recBrgMasuk)
     {
-        $lokasi = Lokasi::all();
+        $user = auth()->user();
+        if ($user->level === 'penjaga_toko') {
+            $lokasi = Lokasi::where('id_lokasi', $user->id_lokasi)->get();
+        } else {
+            $lokasi = Lokasi::all();
+        }
         $subProduk = SubProduk::all();
         $recBrgMasuk->load('detailBrgMasuk');
         return view('rec_brg_masuk.edit', compact('recBrgMasuk', 'lokasi', 'subProduk'));

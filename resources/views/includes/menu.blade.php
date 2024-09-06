@@ -117,6 +117,22 @@
               </a>
             </li>
           </ul>
+          <ul class="nav nav-treeview">
+            <li class="nav-item">
+              <a href="{{ route('laporan.rec_brg_masuk') }}" class="pl-4 nav-link @if(Route::current()->getName() == 'laporan.rec_brg_masuk') active @endif">
+                <i class="fa-solid fa-tag nav-icon"></i>
+                <p>Barang Masuk</p>
+              </a>
+            </li>
+          </ul>
+          <ul class="nav nav-treeview">
+            <li class="nav-item">
+              <a href="{{ route('laporan.pemindahan_stok') }}" class="pl-4 nav-link @if(Route::current()->getName() == 'laporan.pemindahan_stok') active @endif">
+                <i class="fa-solid fa-tag nav-icon"></i>
+                <p>Pemindahan Stok</p>
+              </a>
+            </li>
+          </ul>
         </li>
         @endif
         @if(Auth::user()->level == 'admin')

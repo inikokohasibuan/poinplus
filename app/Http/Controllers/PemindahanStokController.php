@@ -13,7 +13,13 @@ class PemindahanStokController extends Controller
 {
     public function index()
     {
-        $pemindahanStok = PemindahanStok::with(['subProduk', 'lokasiAsal', 'lokasiTujuan'])->get();
+        $user = auth()->user();
+        
+        if ($user->level === 'penjaga_toko') {
+            $pemindahanStok = PemindahanStok::where('id_lokasi_asal', $user->id_lokasi)->orWhere('id_lokasi_tujuan', $user->id_lokasi)->with(['subProduk', 'lokasiAsal', 'lokasiTujuan'])->get();
+        } else {
+            $pemindahanStok = PemindahanStok::with(['subProduk', 'lokasiAsal', 'lokasiTujuan'])->get();
+        }
         return view('pemindahan_stok.index', compact('pemindahanStok'));
     }
 

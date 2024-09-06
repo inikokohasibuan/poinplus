@@ -60,6 +60,8 @@ Route::resource('user', UserController::class);
 Route::prefix('laporan')->name('laporan.')->group(function () {
     Route::get('penjualan', [App\Http\Controllers\LaporanController::class, 'penjualan'])->name('penjualan');
     Route::get('stok', [App\Http\Controllers\LaporanController::class, 'stok'])->name('stok');
+    Route::get('rec_brg_masuk', [App\Http\Controllers\LaporanController::class, 'rec_brg_masuk'])->name('rec_brg_masuk');
+    Route::get('pemindahan_stok', [App\Http\Controllers\LaporanController::class, 'pemindahan_stok'])->name('pemindahan_stok');
 });
 
 // routes/web.php

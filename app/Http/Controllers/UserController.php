@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Lokasi;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -23,7 +24,8 @@ class UserController extends Controller
      */
     public function create()
     {
-        return view('user.create');
+        $lokasi = Lokasi::all();
+        return view('user.create', compact('lokasi'));
     }
 
     /**
@@ -65,35 +67,48 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
-        return view('user.edit', compact('user'));
+        $lokasi = Lokasi::all();
+        return view('user.edit', compact('user', 'lokasi'));
     }
 
     /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, User $user)
-{
-    $validator = Validator::make($request->all(), [
-        'name' => 'required|string|max:255',
-        'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-        'password' => 'nullable|string|min:8|confirmed',
-        'level' => 'required|in:admin,owner,penjaga_toko',
-    ]);
+    {
+        // Validasi input
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $user->id, // Mengabaikan unique constraint untuk user saat ini
+            'password' => 'nullable|string|min:8|confirmed',
+            'level' => 'required|in:admin,owner,penjaga_toko',
+            'id_lokasi' => 'required_if:level,penjaga_toko|exists:lokasi,id_lokasi', // Validasi id_lokasi jika level = penjaga_toko
+        ]);
 
-    if ($validator->fails()) {
-        return redirect()->back()->withErrors($validator)->withInput();
+        // Update data user
+        $user->name = $request->name;
+        $user->email = $request->email;
+        $user->level = $request->level;
+
+        // Jika level adalah 'penjaga_toko', simpan id_lokasi
+        if ($request->level === 'penjaga_toko') {
+            $user->id_lokasi = $request->id_lokasi;
+        } else {
+            // Jika bukan penjaga_toko, id_lokasi di-null-kan (opsional tergantung kebutuhan)
+            $user->id_lokasi = null;
+        }
+
+        // Jika password diisi, maka lakukan hash dan simpan
+        if ($request->filled('password')) {
+            $user->password = Hash::make($request->password);
+        }
+
+        // Simpan perubahan
+        $user->save();
+
+        // Redirect ke halaman index user dengan pesan sukses
+        return redirect()->route('user.index')->with('success', 'User updated successfully.');
     }
-
-    $user->name = $request->name;
-    $user->email = $request->email;
-    $user->level = $request->level;
-    if ($request->filled('password')) {
-        $user->password = Hash::make($request->password);
-    }
-    $user->save();
-
-    return redirect()->route('user.index')->with('success', 'User updated successfully.');
-}
 
     /**
      * Remove the specified resource from storage.

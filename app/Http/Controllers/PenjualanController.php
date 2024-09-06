@@ -15,7 +15,13 @@ class PenjualanController extends Controller
 {
     public function index()
     {
-        $penjualan = Penjualan::with(['pembeli', 'lokasi'])->get();
+        $user = auth()->user();
+
+        if ($user->level === 'penjaga_toko') {
+            $penjualan = Penjualan::where('id_lokasi', $user->id_lokasi)->with(['pembeli','lokasi'])->get();
+        } else {
+            $penjualan = Penjualan::with(['pembeli', 'lokasi'])->get();
+        }
         return view('penjualan.index', compact('penjualan'));
     }
 
@@ -23,7 +29,13 @@ class PenjualanController extends Controller
     {
         $pembeli = Pembeli::all();
         $subProduk = SubProduk::all();
-        $lokasi = Lokasi::all();
+        $user = auth()->user();
+
+        if ($user->level === 'penjaga_toko') {
+            $lokasi = Lokasi::where('id_lokasi', $user->id_lokasi)->get();
+        } else {
+            $lokasi = Lokasi::all();
+        }
         return view('penjualan.create', compact('pembeli', 'subProduk', 'lokasi'));
     }
 
@@ -90,7 +102,12 @@ class PenjualanController extends Controller
         $penjualan = Penjualan::with('detailPenjualan')->findOrFail($id);
         $pembeli = Pembeli::all();
         $subProduk = SubProduk::all();
-        $lokasi = Lokasi::all();
+        $user = auth()->user();
+        if ($user->level === 'penjaga_toko') {
+            $lokasi = Lokasi::where('id_lokasi', $user->id_lokasi)->get();
+        } else {
+            $lokasi = Lokasi::all();
+        }
         return view('penjualan.edit', compact('penjualan', 'pembeli', 'subProduk', 'lokasi'));
     }
 

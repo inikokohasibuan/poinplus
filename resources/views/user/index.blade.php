@@ -24,6 +24,7 @@
                 @foreach($users as $user)
                 <tr>
                     <td>{{ $user->name }}</td>
+                    <td>{{ $user->lokasi->nama_lokasi ?? '' }}</td>
                     <td>{{ $user->email }}</td>
                     <td>{{ ucfirst($user->level) }}</td>
                     <td>
